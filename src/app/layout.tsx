@@ -11,6 +11,7 @@ import {
 import { dark } from "@clerk/themes";
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { ConvexClientProvider } from "@/components/convex-client-provider";
 
 import "./globals.css";
 
@@ -45,23 +46,25 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <header>
-              <SignedOut>
-                <SignInButton />
-              </SignedOut>
+            <ConvexClientProvider>
+              <header>
+                <SignedOut>
+                  <SignInButton />
+                </SignedOut>
 
-              <SignUpButton>
-                <button className="bg-[#6c47ff] text-white rounded-full font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 cursor-pointer">
-                  Sign Up
-                </button>
-              </SignUpButton>
+                <SignUpButton>
+                  <button className="bg-[#6c47ff] text-white rounded-full font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 cursor-pointer">
+                    Sign Up
+                  </button>
+                </SignUpButton>
 
-              <SignedIn>
-                <UserButton />
-              </SignedIn>
-            </header>
+                <SignedIn>
+                  <UserButton />
+                </SignedIn>
+              </header>
 
-            {children}
+              {children}
+            </ConvexClientProvider>
           </ThemeProvider>
         </body>
       </html>
