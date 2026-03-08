@@ -3,6 +3,12 @@
 import { Poppins } from "next/font/google";
 import { SparkleIcon } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
+import {
+  adjectives,
+  animals,
+  colors,
+  uniqueNamesGenerator,
+} from "unique-names-generator";
 
 import { Kbd } from "@/components/ui/kbd";
 import { Button } from "@/components/ui/button";
@@ -44,7 +50,17 @@ export const ProjectsView = () => {
           <div className="grid grid-cols-2 gap-2">
             <Button
               variant="outline"
-              onClick={() => {}}
+              onClick={() => {
+                const projectName = uniqueNamesGenerator({
+                  dictionaries: [adjectives, colors, animals],
+                  separator: "-",
+                  length: 3,
+                });
+
+                createProject({
+                  name: projectName,
+                });
+              }}
               className="flex flex-col items-start justify-start gap-6 h-full p-4 bg-background border rounded-none"
             >
               <div className="flex items-center justify-between w-full">
