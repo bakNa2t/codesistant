@@ -108,7 +108,10 @@ export const ProjectsList = ({ onViewAll }: ProjectsListProps) => {
               Recent projects
             </span>
 
-            <button className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              onClick={onViewAll}
+              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
               <span>View all</span>
               <Kbd className="bg-accent border">Ctrl+K</Kbd>
             </button>
