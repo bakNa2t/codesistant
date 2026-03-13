@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Poppins } from "next/font/google";
 import { SparkleIcon } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
@@ -29,6 +29,21 @@ export const ProjectsView = () => {
 
   const [commandDialogOpen, setCommandDialogOpen] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "k") {
+          e.preventDefault();
+          setCommandDialogOpen(true);
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <>
       <ProjectsCommandDialog
@@ -40,7 +55,7 @@ export const ProjectsView = () => {
           <div className="flex justify-between items-center gap-4 w-full">
             <div className="flex items-center gap-2 w-full group/logo">
               <img
-                src="/vercel.svg"
+                src="/logo.svg"
                 alt="Codesistant"
                 className="size-8 md:size-11.5"
               />
