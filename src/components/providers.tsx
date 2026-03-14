@@ -6,12 +6,7 @@ import {
   ConvexReactClient,
   Unauthenticated,
 } from "convex/react";
-import {
-  ClerkProvider,
-  SignOutButton,
-  useAuth,
-  UserButton,
-} from "@clerk/nextjs";
+import { ClerkProvider, useAuth } from "@clerk/nextjs";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 
 import { AuthLoadingView } from "@/features/auth/components/auth-loading-view";
@@ -31,11 +26,7 @@ export const Providers = ({ children }: { children: React.ReactNode }) => {
           enableSystem
           disableTransitionOnChange
         >
-          <Authenticated>
-            <UserButton />
-            <SignOutButton />
-            {children}
-          </Authenticated>
+          <Authenticated>{children}</Authenticated>
 
           <Unauthenticated>
             <UnauthenticatedView />
