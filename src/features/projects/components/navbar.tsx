@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Poppins } from "next/font/google";
@@ -15,6 +17,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Id } from "../../../../convex/_generated/dataModel";
+import { useProject } from "../hooks/use-projects";
 
 const font = Poppins({
   subsets: ["latin"],
@@ -22,6 +25,8 @@ const font = Poppins({
 });
 
 export const Navbar = ({ projectId }: { projectId: Id<"projects"> }) => {
+  const project = useProject(projectId);
+
   return (
     <nav className="flex justify-between items-center gap-x-2 p-2 bg-sidebar border-b">
       <div className="flex items-center gap-x-2">
@@ -44,7 +49,7 @@ export const Navbar = ({ projectId }: { projectId: Id<"projects"> }) => {
 
             <BreadcrumbItem>
               <BreadcrumbPage className="max-w-40 text-sm cursor-pointer hover:text-primary font-medium truncate">
-                Demo project
+                {project?.name ?? "Loading..."}
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
