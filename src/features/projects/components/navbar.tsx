@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { Poppins } from "next/font/google";
 import { UserButton } from "@clerk/nextjs";
 
@@ -17,7 +18,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Id } from "../../../../convex/_generated/dataModel";
-import { useProject } from "../hooks/use-projects";
+import { useProject, useRenameProject } from "../hooks/use-projects";
 
 const font = Poppins({
   subsets: ["latin"],
@@ -26,6 +27,17 @@ const font = Poppins({
 
 export const Navbar = ({ projectId }: { projectId: Id<"projects"> }) => {
   const project = useProject(projectId);
+  const renameProject = useRenameProject(projectId);
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [name, setName] = useState("");
+
+  const handleStartRename = () => {
+    if (!project) return;
+
+    setName(project.name);
+    setIsRenaming(true);
+  };
 
   return (
     <nav className="flex justify-between items-center gap-x-2 p-2 bg-sidebar border-b">
@@ -48,9 +60,25 @@ export const Navbar = ({ projectId }: { projectId: Id<"projects"> }) => {
             <BreadcrumbSeparator className="ml0-1! mr-1" />
 
             <BreadcrumbItem>
-              <BreadcrumbPage className="max-w-40 text-sm cursor-pointer hover:text-primary font-medium truncate">
-                {project?.name ?? "Loading..."}
-              </BreadcrumbPage>
+              {isRenaming ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onFocus={(e) => e.currentTarget.select()}
+                  onBlur={() => {}}
+                  onKeyDown={() => {}}
+                  className="text-sm bg-transparent text-foreground outline-none focus:ring-1 focus:ring-inset focus:ring-ring font-medium truncate max-w-40"
+                />
+              ) : (
+                <BreadcrumbPage
+                  className="max-w-40 text-sm cursor-pointer hover:text-primary font-medium truncate"
+                  onClick={handleStartRename}
+                >
+                  {project?.name ?? "Loading..."}
+                </BreadcrumbPage>
+              )}
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
