@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useState } from "react";
 import { Poppins } from "next/font/google";
 import { UserButton } from "@clerk/nextjs";
+import { formatDistanceToNow } from "date-fns";
+import { CloudCheckIcon, LoaderIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +17,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { cn } from "@/lib/utils";
 import { Id } from "../../../../convex/_generated/dataModel";
@@ -37,6 +44,24 @@ export const Navbar = ({ projectId }: { projectId: Id<"projects"> }) => {
 
     setName(project.name);
     setIsRenaming(true);
+  };
+
+  const handleSubmit = () => {
+    if (!project) return;
+    setIsRenaming(false);
+
+    const trimmedName = name.trim();
+    if (!trimmedName || trimmedName === project.name) return;
+
+    renameProject({ id: projectId, name: trimmedName });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSubmit();
+    } else if (e.key === "Escape") {
+      setIsRenaming(false);
+    }
   };
 
   return (
@@ -67,8 +92,8 @@ export const Navbar = ({ projectId }: { projectId: Id<"projects"> }) => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   onFocus={(e) => e.currentTarget.select()}
-                  onBlur={() => {}}
-                  onKeyDown={() => {}}
+                  onBlur={() => handleSubmit}
+                  onKeyDown={() => handleKeyDown}
                   className="text-sm bg-transparent text-foreground outline-none focus:ring-1 focus:ring-inset focus:ring-ring font-medium truncate max-w-40"
                 />
               ) : (
@@ -82,6 +107,27 @@ export const Navbar = ({ projectId }: { projectId: Id<"projects"> }) => {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
+
+        {project?.importStatus === "importing" ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <LoaderIcon className="size-4 text-muted-foreground animate-spin" />
+              <TooltipContent>Importing...</TooltipContent>
+            </TooltipTrigger>
+          </Tooltip>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <CloudCheckIcon className="size-4 text-muted-foreground" />
+              <TooltipContent>
+                Saved{" "}
+                {project?.updatedAt
+                  ? formatDistanceToNow(project.updatedAt, { addSuffix: true })
+                  : "Loading..."}
+              </TooltipContent>
+            </TooltipTrigger>
+          </Tooltip>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
