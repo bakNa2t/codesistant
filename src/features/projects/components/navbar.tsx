@@ -112,20 +112,20 @@ export const Navbar = ({ projectId }: { projectId: Id<"projects"> }) => {
           <Tooltip>
             <TooltipTrigger asChild>
               <LoaderIcon className="size-4 text-muted-foreground animate-spin" />
-              <TooltipContent>Importing...</TooltipContent>
             </TooltipTrigger>
+            <TooltipContent>Importing...</TooltipContent>
           </Tooltip>
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
               <CloudCheckIcon className="size-4 text-muted-foreground" />
-              <TooltipContent>
-                Saved{" "}
-                {project?.updatedAt
-                  ? formatDistanceToNow(project.updatedAt, { addSuffix: true })
-                  : "Loading..."}
-              </TooltipContent>
             </TooltipTrigger>
+            <TooltipContent>
+              Saved{" "}
+              {project?.updatedAt
+                ? formatDistanceToNow(project.updatedAt, { addSuffix: true })
+                : "Loading..."}
+            </TooltipContent>
           </Tooltip>
         )}
       </div>
