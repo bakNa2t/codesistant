@@ -9,12 +9,36 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { useProject } from "../../hooks/use-projects";
 import { cn } from "@/lib/utils";
+import { useProject } from "../../hooks/use-projects";
 import { Id } from "../../../../../convex/_generated/dataModel";
+import { useCreateFile, useCreateFolder } from "../../hooks/use-files";
 
 export const FileExplorer = ({ projectId }: { projectId: Id<"projects"> }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [collapseKey, setCollapseKey] = useState(0);
+  const [creating, setCreating] = useState<"file" | "folder" | null>(null);
+
+  const createFile = useCreateFile();
+  const createFolder = useCreateFolder();
+  const handleCreate = (name: string) => {
+    setCreating(null);
+
+    if (creating === "file") {
+      createFile({
+        projectId,
+        name,
+        content: "",
+        parentId: undefined,
+      });
+    } else {
+      createFolder({
+        projectId,
+        name,
+        parentId: undefined,
+      });
+    }
+  };
 
   const project = useProject(projectId);
 
@@ -45,7 +69,7 @@ export const FileExplorer = ({ projectId }: { projectId: Id<"projects"> }) => {
                 e.stopPropagation();
                 e.preventDefault();
                 setIsOpen(true);
-                // Set creating to true
+                setCreating("file");
               }}
             >
               <FilePlusCornerIcon className="size-3.5" />
@@ -58,7 +82,7 @@ export const FileExplorer = ({ projectId }: { projectId: Id<"projects"> }) => {
                 e.stopPropagation();
                 e.preventDefault();
                 setIsOpen(true);
-                // Set creating folder to true
+                setCreating("folder");
               }}
             >
               <FolderPlusIcon className="size-3.5" />
@@ -70,14 +94,26 @@ export const FileExplorer = ({ projectId }: { projectId: Id<"projects"> }) => {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-
-                // Reset collapse
+                setCollapseKey((prev) => prev + 1);
               }}
             >
               <CopyMinusIcon className="size-3.5" />
             </Button>
           </div>
         </div>
+
+        {isOpen && (
+          <>
+            {creating && (
+              <CreateInput
+                type={creating}
+                level={0}
+                onSubmit={handleCreate}
+                onCancel={() => setCreating(null)}
+              />
+            )}
+          </>
+        )}
       </ScrollArea>
     </div>
   );
