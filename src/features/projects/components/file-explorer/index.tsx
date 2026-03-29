@@ -8,6 +8,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CreateInput } from "./create-input";
 
 import { cn } from "@/lib/utils";
 import { useProject } from "../../hooks/use-projects";
