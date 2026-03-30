@@ -8,17 +8,24 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoadingRow } from "./loading-row";
 import { CreateInput } from "./create-input";
 
 import { cn } from "@/lib/utils";
 import { useProject } from "../../hooks/use-projects";
 import { Id } from "../../../../../convex/_generated/dataModel";
-import { useCreateFile, useCreateFolder } from "../../hooks/use-files";
+import {
+  useCreateFile,
+  useCreateFolder,
+  useFolderContents,
+} from "../../hooks/use-files";
 
 export const FileExplorer = ({ projectId }: { projectId: Id<"projects"> }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [collapseKey, setCollapseKey] = useState(0);
   const [creating, setCreating] = useState<"file" | "folder" | null>(null);
+
+  const rootFiles = useFolderContents({ projectId, enabled: isOpen });
 
   const createFile = useCreateFile();
   const createFolder = useCreateFolder();
@@ -105,6 +112,7 @@ export const FileExplorer = ({ projectId }: { projectId: Id<"projects"> }) => {
 
         {isOpen && (
           <>
+            {rootFiles === undefined && <LoadingRow level={0} />}
             {creating && (
               <CreateInput
                 type={creating}
