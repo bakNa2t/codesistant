@@ -8,6 +8,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tree } from "./tree";
 import { LoadingRow } from "./loading-row";
 import { CreateInput } from "./create-input";
 
@@ -121,6 +122,14 @@ export const FileExplorer = ({ projectId }: { projectId: Id<"projects"> }) => {
                 onCancel={() => setCreating(null)}
               />
             )}
+            {rootFiles?.map((item) => (
+              <Tree
+                key={`${item._id}-${collapseKey}`}
+                item={item}
+                level={0}
+                projectId={projectId}
+              />
+            ))}
           </>
         )}
       </ScrollArea>
