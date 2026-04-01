@@ -14,6 +14,7 @@ import {
   useRenameFile,
 } from "@/features/projects/hooks/use-files";
 import { Doc, Id } from "../../../../../convex/_generated/dataModel";
+import { TreeItemWrapper } from "./treeitem-wrapper";
 
 export const Tree = ({
   item,
@@ -40,7 +41,25 @@ export const Tree = ({
   });
 
   if (item.type === "file") {
-    return <div>This is a file!</div>;
+    const fileName = item.name;
+
+    return (
+      <TreeItemWrapper
+        item={item}
+        level={level}
+        isActive={false}
+        onClick={() => {}}
+        onDoubleClick={() => {}}
+        onRename={() => setIsRenaming(true)}
+        onDelete={() => {
+          // close tab
+          deleteFile({ id: item._id });
+        }}
+      >
+        <FileIcon autoAssign fileName={fileName} className="size-4" />
+        <span className="truncate text-sm">{fileName}</span>
+      </TreeItemWrapper>
+    );
   }
 
   return <div>This is a folder</div>;
