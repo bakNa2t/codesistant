@@ -1,15 +1,14 @@
+import { cn } from "@/lib/utils";
 import {
   ContextMenu,
-  ContextMenuContent,
   ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
+  ContextMenuContent,
   ContextMenuTrigger,
+  ContextMenuShortcut,
+  ContextMenuSeparator,
 } from "@/components/ui/context-menu";
 
-import { cn } from "@/lib/utils";
 import { getItemPadding } from "./constants";
-
 import { Doc } from "../../../../../convex/_generated/dataModel";
 
 export const TreeItemWrapper = ({
@@ -63,25 +62,22 @@ export const TreeItemWrapper = ({
         {item.type === "folder" && (
           <>
             <ContextMenuItem onClick={onCreateFile} className="text-sm">
-              New file...
+              New File...
             </ContextMenuItem>
             <ContextMenuItem onClick={onCreateFolder} className="text-sm">
-              New folder...
+              New Folder...
             </ContextMenuItem>
-
             <ContextMenuSeparator />
-
-            <ContextMenuItem onClick={onRename} className="text-sm">
-              Rename...
-              <ContextMenuShortcut>Enter</ContextMenuShortcut>
-            </ContextMenuItem>
-
-            <ContextMenuItem onClick={onDelete} className="text-sm">
-              Delete permanently
-              <ContextMenuShortcut>Ctrl+Backspace</ContextMenuShortcut>
-            </ContextMenuItem>
           </>
         )}
+        <ContextMenuItem onClick={onRename} className="text-sm">
+          Rename...
+          <ContextMenuShortcut>Enter</ContextMenuShortcut>
+        </ContextMenuItem>
+        <ContextMenuItem onClick={onDelete} className="text-sm">
+          Delete Permanently
+          <ContextMenuShortcut>Ctrl+Backspace</ContextMenuShortcut>
+        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );
