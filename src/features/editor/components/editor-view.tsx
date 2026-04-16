@@ -31,7 +31,7 @@ export const EditorView = ({ projectId }: { projectId: Id<"projects"> }) => {
             />
           </div>
         )}
-        {activeFile && <CodeEditor />}
+        {activeFile && <CodeEditor filename={activeFile.name} />}
       </div>
     </div>
   );
