@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
-import { basicSetup } from "codemirror";
 import { EditorView, keymap } from "@codemirror/view";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { indentWithTab } from "@codemirror/commands";
+import { indentationMarkers } from "@replit/codemirror-indentation-markers";
 
 import { minimap } from "../extensions/minimap";
 import { customTheme } from "../extensions/theme";
+import { customSetup } from "../extensions/custom-setup";
 import { getLanguageExtension } from "../extensions/language-extansion";
 
 interface CodeEditorProps {
@@ -29,10 +30,11 @@ export const CodeEditor = ({ filename }: CodeEditorProps) => {
       extensions: [
         oneDark,
         customTheme,
-        basicSetup,
+        customSetup,
         languageExtenson,
         keymap.of([indentWithTab]),
         minimap(),
+        indentationMarkers(),
       ],
     });
 
