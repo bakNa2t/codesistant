@@ -11,9 +11,15 @@ import { getLanguageExtension } from "../extensions/language-extansion";
 
 interface CodeEditorProps {
   filename: string;
+  initialValue: string;
+  onChange: (value: string) => void;
 }
 
-export const CodeEditor = ({ filename }: CodeEditorProps) => {
+export const CodeEditor = ({
+  filename,
+  initialValue,
+  onChange,
+}: CodeEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
 
@@ -25,7 +31,7 @@ export const CodeEditor = ({ filename }: CodeEditorProps) => {
     if (!editorRef.current) return;
 
     const view = new EditorView({
-      doc: "Start document",
+      doc: initialValue,
       parent: editorRef.current,
       extensions: [
         oneDark,
@@ -35,13 +41,19 @@ export const CodeEditor = ({ filename }: CodeEditorProps) => {
         keymap.of([indentWithTab]),
         minimap(),
         indentationMarkers(),
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) {
+            onChange(update.state.doc.toString());
+          }
+        }),
       ],
     });
 
     viewRef.current = view;
 
     return () => view.destroy();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialValue is only used for initial document
+  }, [languageExtenson]);
 
   return <div ref={editorRef} className="pl-4 size-full bg-background" />;
 };
