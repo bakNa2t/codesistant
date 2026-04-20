@@ -11,13 +11,13 @@ import { getLanguageExtension } from "../extensions/language-extansion";
 
 interface CodeEditorProps {
   filename: string;
-  initialValue: string;
+  initialValue?: string;
   onChange: (value: string) => void;
 }
 
 export const CodeEditor = ({
   filename,
-  initialValue,
+  initialValue = "",
   onChange,
 }: CodeEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
