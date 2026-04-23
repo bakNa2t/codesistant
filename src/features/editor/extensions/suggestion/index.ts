@@ -49,8 +49,35 @@ const renderPlugin = ViewPlugin.fromClass(
           return effect.is(setSuggestionEffect);
         });
       });
+
+      // Rebuild decorations if doc changed, cursor moved, or suggestion changed
+      const shouldRebuild =
+        update.docChanged || update.selectionSet || suggestionChanged;
+
+      if (shouldRebuild) {
+        this.decorations = this.build(update.view);
+      }
+    }
+
+    build(view: EditorView) {
+      // Get current suggestion from state
+      const suggestion = view.state.field(suggestionState);
+
+      if (!suggestion) {
+        return Decoration.none;
+      }
+
+      // Create a widget decoration at the cursor position
+      const cursor = view.state.selection.main.head;
+      return Decoration.set([
+        Decoration.widget({
+          widget: new SuggestionWidget(suggestion),
+          side: 1, // Render after cursor (side: 1), not before (side: -1)
+        }).range(cursor),
+      ]);
     }
   },
+  { decorations: (plugin) => plugin.decorations }, // Tell CodeMirror to use our decorations
 );
 
 export const suggestion = (filename: string) => [suggestionState, renderPlugin];
