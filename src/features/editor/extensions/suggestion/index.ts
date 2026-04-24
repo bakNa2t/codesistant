@@ -34,6 +34,22 @@ const suggestionState = StateField.define<string | null>({
   },
 });
 
+// WidgetType: Creates custom DOM elements to display in the editor.
+// toDOM() is called by CodeMirror to create the actual HTML element.
+class SuggestionWidget extends WidgetType {
+  constructor(readonly text: string) {
+    super();
+  }
+
+  toDOM() {
+    const span = document.createElement("span");
+    span.textContent = this.text;
+    span.style.opacity = "0.4"; // Ghost text appearance
+    span.style.pointerEvents = "none"; // Don't interfere with clicks
+    return span;
+  }
+}
+
 const renderPlugin = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
