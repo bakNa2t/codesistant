@@ -18,7 +18,7 @@ const setSuggestionEffect = StateEffect.define<string | null>();
 // - update(): Called on every transaction (keystroke, etc.) to potentially update the value
 const suggestionState = StateField.define<string | null>({
   create() {
-    return "implent suggestion";
+    return null;
   },
   update(value, transaction) {
     // Check each effect in this transaction
@@ -96,4 +96,28 @@ const renderPlugin = ViewPlugin.fromClass(
   { decorations: (plugin) => plugin.decorations }, // Tell CodeMirror to use our decorations
 );
 
-export const suggestion = (filename: string) => [suggestionState, renderPlugin];
+const acceptSuggestionKeymap = keymap.of([
+  {
+    key: "Tab",
+    run: (view) => {
+      const suggestion = view.state.field(suggestionState);
+      if (!suggestion) {
+        return false; // No suggestion? Let Tab do its normal thing (indent)
+      }
+
+      const cursor = view.state.selection.main.head;
+      view.dispatch({
+        changes: { from: cursor, insert: suggestion }, // Insert the suggestion text
+        selection: { anchor: cursor + suggestion.length }, // Move cursor to end
+        effects: setSuggestionEffect.of(null), // Clear the suggestion
+      });
+      return true; // We handled Tab, don't indent
+    },
+  },
+]);
+
+export const suggestion = (filename: string) => [
+  suggestionState,
+  renderPlugin,
+  acceptSuggestionKeymap,
+];
