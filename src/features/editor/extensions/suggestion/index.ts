@@ -9,6 +9,8 @@ import {
 } from "@codemirror/view";
 import { StateEffect, StateField } from "@codemirror/state";
 
+import { fetcher } from "./fetcher";
+
 // StateEffect: A way to send "messages" to update state.
 // We define one effect type for setting the suggestion text.
 const setSuggestionEffect = StateEffect.define<string | null>();
@@ -54,15 +56,50 @@ let debounceTimer: number | null = null;
 let isWaitingForSuggestion = false;
 const DEBOUNCE_DELAY = 300;
 
-const generateFakeSuggestion = (textBeforeCursor: string): string | null => {
-  const trimmed = textBeforeCursor.trimEnd();
+let currentAbortController: AbortController | null = null;
 
-  if (trimmed.endsWith("const")) return "myVariable = ";
-  if (trimmed.endsWith("function")) return "myFunction() {\n \n}";
-  if (trimmed.endsWith("console.")) return "log()";
-  if (trimmed.endsWith("return")) return "null;";
+// const generateFakeSuggestion = (textBeforeCursor: string): string | null => {
+//   const trimmed = textBeforeCursor.trimEnd();
 
-  return null;
+//   if (trimmed.endsWith("const")) return "myVariable = ";
+//   if (trimmed.endsWith("function")) return "myFunction() {\n \n}";
+//   if (trimmed.endsWith("console.")) return "log()";
+//   if (trimmed.endsWith("return")) return "null;";
+
+//   return null;
+// };
+
+const generatePayload = (view: EditorView, filename: string) => {
+  const code = view.state.doc.toString();
+  if (!code || code.trim().length === 0) return null;
+
+  const cursorPosition = view.state.selection.main.head;
+  const currentLine = view.state.doc.lineAt(cursorPosition);
+  const cursorInLine = cursorPosition - currentLine.from;
+
+  const previousLines: string[] = [];
+  const previousLinesToFetch = Math.min(5, currentLine.number - 1);
+  for (let i = previousLinesToFetch; i >= 1; i--) {
+    previousLines.push(view.state.doc.line(currentLine.number - i).text);
+  }
+
+  const nextLines: string[] = [];
+  const totalLines = view.state.doc.lines;
+  const linesToFetch = Math.min(5, totalLines - currentLine.number);
+  for (let i = 1; i <= linesToFetch; i++) {
+    nextLines.push(view.state.doc.line(currentLine.number + i).text);
+  }
+
+  return {
+    filename,
+    code,
+    currentLine: currentLine.text,
+    previousLines: previousLines.join("\n"),
+    textBeforeCursor: currentLine.text.slice(0, cursorInLine),
+    textAfterCursor: currentLine.text.slice(cursorInLine),
+    nextLines: nextLines.join("\n"),
+    lineNumber: currentLine.number,
+  };
 };
 
 const createDebouncePlugin = (filename: string) => {
@@ -83,13 +120,31 @@ const createDebouncePlugin = (filename: string) => {
           clearTimeout(debounceTimer);
         }
 
+        if (currentAbortController !== null) {
+          currentAbortController.abort();
+        }
+
         isWaitingForSuggestion = true;
 
         debounceTimer = window.setTimeout(async () => {
-          const cursor = view.state.selection.main.head;
-          const line = view.state.doc.lineAt(cursor);
-          const textBeforeCursor = line.text.slice(0, cursor - line.from);
-          const suggestion = generateFakeSuggestion(textBeforeCursor);
+          // const cursor = view.state.selection.main.head;
+          // const line = view.state.doc.lineAt(cursor);
+          // const textBeforeCursor = line.text.slice(0, cursor - line.from);
+          // const suggestion = generateFakeSuggestion(textBeforeCursor);
+
+          const payload = generatePayload(view, filename);
+
+          if (!payload) {
+            isWaitingForSuggestion = false;
+            view.dispatch({ effects: setSuggestionEffect.of(null) });
+            return;
+          }
+
+          currentAbortController = new AbortController();
+          const suggestion = await fetcher(
+            payload,
+            currentAbortController.signal,
+          );
 
           isWaitingForSuggestion = false;
           view.dispatch({
@@ -101,6 +156,10 @@ const createDebouncePlugin = (filename: string) => {
       destroy() {
         if (debounceTimer != null) {
           clearTimeout(debounceTimer);
+        }
+
+        if (currentAbortController !== null) {
+          currentAbortController.abort();
         }
       }
     },
