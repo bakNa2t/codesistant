@@ -2,6 +2,7 @@ import { z } from "zod";
 import { google } from "@ai-sdk/google";
 import { generateText, Output } from "ai";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 const suggestionSchema = z.object({
   suggestion: z
@@ -43,6 +44,12 @@ Your suggestion is inserted immediately after the cursor, so never suggest code 
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 500 });
+    }
+
     const {
       filename,
       code,
@@ -68,7 +75,7 @@ export async function POST(request: Request) {
       .replace("{lineNumber}", lineNumber.toString());
 
     const { output } = await generateText({
-      model: google("gemini-2.5-flash"),
+      model: google("gemini-2.5-latest"),
       output: Output.object({ schema: suggestionSchema }),
       prompt,
     });
