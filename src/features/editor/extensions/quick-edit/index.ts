@@ -1,13 +1,5 @@
-import {
-  Decoration,
-  DecorationSet,
-  EditorView,
-  ViewPlugin,
-  ViewUpdate,
-  WidgetType,
-  keymap,
-} from "@codemirror/view";
-import { StateEffect, StateField } from "@codemirror/state";
+import { Tooltip, showTooltip, keymap, EditorView } from "@codemirror/view";
+import { StateEffect, StateField, EditorState } from "@codemirror/state";
 
 import { fetcher } from "./fetcher";
 
@@ -91,12 +83,121 @@ const createQuickEditTooltip = (state: EditorState): readonly Tooltip[] => {
             });
           }
         };
+
+        const submitButton = document.createElement("button");
+        submitButton.type = "submit";
+        submitButton.textContent = "Submit";
+        submitButton.className =
+          "font-sans p-1 px-2 text-muted-foreground hover:text-foreground hover:bg-foreground/10 rounded-sm";
+
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+
+          if (!editorView) return;
+
+          const instruction = input.value.trim();
+          if (!instruction) return;
+
+          const selection = editorView.state.selection.main;
+          const selectedCode = editorView.state.doc.sliceString(
+            selection.from,
+            selection.to,
+          );
+          const fullCode = editorView.state.doc.toString();
+
+          submitButton.disabled = true;
+          submitButton.textContent = "Editing...";
+
+          currentAbortController = new AbortController();
+          const editedCode = await fetcher(
+            {
+              selectedCode,
+              fullCode,
+              instruction,
+            },
+            currentAbortController.signal,
+          );
+
+          if (editedCode) {
+            editorView.dispatch({
+              changes: {
+                from: selection.from,
+                to: selection.to,
+                insert: editedCode,
+              },
+              selection: { anchor: selection.from + editedCode.length },
+              effects: showQuickEditEffect.of(false),
+            });
+          } else {
+            submitButton.disabled = false;
+            submitButton.textContent = "Submit";
+          }
+
+          currentAbortController = null;
+        };
+
+        buttonContainer.appendChild(cancelButton);
+        buttonContainer.appendChild(submitButton);
+
+        form.appendChild(input);
+        form.appendChild(buttonContainer);
+
+        dom.appendChild(form);
+
+        setTimeout(() => {
+          input.focus();
+        }, 0);
+
+        return { dom };
       },
     },
   ];
 };
 
+const quickEditTooltipField = StateField.define<readonly Tooltip[]>({
+  create(state) {
+    return createQuickEditTooltip(state);
+  },
+  update(tooltips, transaction) {
+    if (transaction.docChanged || transaction.selection) {
+      return createQuickEditTooltip(transaction.state);
+    }
+    for (const effect of transaction.effects) {
+      if (effect.is(showQuickEditEffect)) {
+        return createQuickEditTooltip(transaction.state);
+      }
+    }
+
+    return tooltips;
+  },
+  provide: (field) =>
+    showTooltip.computeN([field], (state) => state.field(field)),
+});
+
+const quickEditKeymap = keymap.of([
+  {
+    key: "Mod-k",
+    run: (view) => {
+      const selection = view.state.selection.main;
+      if (selection.empty) {
+        return false;
+      }
+
+      view.dispatch({
+        effects: showQuickEditEffect.of(true),
+      });
+      return true;
+    },
+  },
+]);
+
+const captureViewExtension = EditorView.updateListener.of((update) => {
+  editorView = update.view;
+});
+
 export const quickEdit = (filename: string) => [
   quickEditState, //state storage
   quickEditTooltipField,
+  quickEditKeymap,
+  captureViewExtension,
 ];
