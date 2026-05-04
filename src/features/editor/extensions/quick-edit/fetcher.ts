@@ -5,7 +5,7 @@ import { toast } from "sonner";
 const editRequestSchema = z.object({
   selectedCode: z.string(),
   fullCode: z.string(),
-  instrucrion: z.string(),
+  instruction: z.string(),
 });
 
 const editResponseSchema = z.object({
