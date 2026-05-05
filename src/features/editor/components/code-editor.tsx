@@ -9,6 +9,7 @@ import { customTheme } from "../extensions/theme";
 import { suggestion } from "../extensions/suggestion";
 import { quickEdit } from "../extensions/quick-edit";
 import { customSetup } from "../extensions/custom-setup";
+import { selectionTooltip } from "../extensions/selection-tooltip";
 import { getLanguageExtension } from "../extensions/language-extansion";
 
 interface CodeEditorProps {
@@ -42,6 +43,7 @@ export const CodeEditor = ({
         languageExtenson,
         suggestion(filename),
         quickEdit(filename),
+        selectionTooltip(),
         keymap.of([indentWithTab]),
         minimap(),
         indentationMarkers(),
