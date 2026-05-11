@@ -18,6 +18,6 @@ export const useConversations = (projectId: Id<"projects">) => {
   return useQuery(api.conversations.getByProject, { projectId });
 };
 
-export const useCreateConversarion = () => {
+export const useCreateConversation = () => {
   return useMutation(api.conversations.create);
 };
