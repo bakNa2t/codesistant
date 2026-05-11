@@ -43,17 +43,49 @@ interface ConversationSidebarProps {
 export const ConversationSidebar = ({
   projectId,
 }: ConversationSidebarProps) => {
+  const [selectedConversationId, setSelectedConversationId] =
+    useState<Id<"conversations"> | null>(null);
+
+  const createConversation = useCreateConversation();
+  const conversations = useConversations(projectId);
+
+  const activeConversationId =
+    selectedConversationId ?? conversations?.[0]?._id ?? null;
+
+  const activeConversation = useConversation(activeConversationId);
+
+  const handleCreateConversation = async () => {
+    try {
+      const newConversationId = await createConversation({
+        projectId,
+        title: DEFAULT_CONVERSATION_NAME,
+      });
+
+      setSelectedConversationId(newConversationId);
+      return newConversationId;
+    } catch {
+      toast.error("Unable to create new conversation");
+      return null;
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-sidebar">
       <div className="flex items-center justify-between h-8.75 border-b">
-        <div className="text-sm truncate pl-3">{DEFAULT_CONVERSATION_NAME}</div>
+        <div className="text-sm truncate pl-3">
+          {activeConversation?.title ?? DEFAULT_CONVERSATION_NAME}
+        </div>
 
         <div className="flex items-center px-1 gap-1">
           <Button size="icon-xs" variant="highlight">
             <HistoryIcon className="size-3.5" />
           </Button>
 
-          <Button size="icon-xs" variant="highlight">
+          <Button
+            size="icon-xs"
+            variant="highlight"
+            onClick={handleCreateConversation}
+          >
             <PlusIcon className="size-3.5" />
           </Button>
         </div>
