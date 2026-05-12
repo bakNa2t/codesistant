@@ -43,6 +43,7 @@ interface ConversationSidebarProps {
 export const ConversationSidebar = ({
   projectId,
 }: ConversationSidebarProps) => {
+  const [input, setInput] = useState("");
   const [selectedConversationId, setSelectedConversationId] =
     useState<Id<"conversations"> | null>(null);
 
@@ -53,6 +54,12 @@ export const ConversationSidebar = ({
     selectedConversationId ?? conversations?.[0]?._id ?? null;
 
   const activeConversation = useConversation(activeConversationId);
+  const conversationMessages = useMessages(activeConversationId);
+
+  // Check if any message is currently processing
+  const isProcessing = conversationMessages?.some(
+    (msg) => msg.status === "processing",
+  );
 
   const handleCreateConversation = async () => {
     try {
@@ -92,7 +99,35 @@ export const ConversationSidebar = ({
       </div>
       <Conversation className="flex-1">
         <ConversationContent>
-          <p>messages</p>
+          {conversationMessages?.map((message, messageIndex) => (
+            <Message key={message._id} from={message.role}>
+              <MessageContent>
+                {message.status === "processing" ? (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <LoaderIcon className="size-4 animate-spin" />
+                    <span>Thinking...</span>
+                  </div>
+                ) : (
+                  <MessageResponse>{message.content}</MessageResponse>
+                )}
+              </MessageContent>
+
+              {message.role === "assistant" &&
+                message.status === "completed" &&
+                messageIndex === (conversationMessages?.length ?? 0) - 1 && (
+                  <MessageActions>
+                    <MessageAction
+                      onClick={() => {
+                        navigator.clipboard.writeText(message.content);
+                      }}
+                      label="Copy"
+                    >
+                      <CopyIcon className="size-3" />
+                    </MessageAction>
+                  </MessageActions>
+                )}
+            </Message>
+          ))}
         </ConversationContent>
         <ConversationScrollButton />
       </Conversation>
@@ -101,16 +136,19 @@ export const ConversationSidebar = ({
         <PromptInput onSubmit={() => {}} className="mt-2">
           <PromptInputBody>
             <PromptInputTextarea
-              onChange={() => {}}
-              value=""
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Ask Codesistant anything..."
-              disabled={false}
+              disabled={isProcessing}
             />
           </PromptInputBody>
 
           <PromptInputFooter>
             <PromptInputTools />
-            <PromptInputSubmit status="ready" disabled={false} />
+            <PromptInputSubmit
+              status={isProcessing ? "streaming" : undefined}
+              disabled={isProcessing ? false : !input}
+            />
           </PromptInputFooter>
         </PromptInput>
       </div>
