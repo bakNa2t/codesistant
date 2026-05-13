@@ -76,6 +76,35 @@ export const ConversationSidebar = ({
     }
   };
 
+  const handleSubmit = async (message: PromptInputMessage) => {
+    // If processing and no new message, this is just a stop function
+    if (isProcessing && !message.text) {
+      setInput("");
+      return;
+    }
+
+    let conversationId = activeConversationId;
+
+    if (!conversationId) {
+         conversationId = await handleCreateConversation();
+      if (!conversationId) {
+        return;
+       }
+      }
+
+      try {
+        await ky.post("/api/messages", {
+        json: {
+          conversationId,
+          message: message.text,
+        },
+      });
+      } catch {
+        toast.error("Message failed to send");
+      }
+    }
+  }
+
   return (
     <div className="flex flex-col h-full bg-sidebar">
       <div className="flex items-center justify-between h-8.75 border-b">
@@ -133,7 +162,7 @@ export const ConversationSidebar = ({
       </Conversation>
 
       <div className="p-3">
-        <PromptInput onSubmit={() => {}} className="mt-2">
+        <PromptInput onSubmit={handleSubmit} className="mt-2">
           <PromptInputBody>
             <PromptInputTextarea
               value={input}
