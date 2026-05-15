@@ -86,24 +86,23 @@ export const ConversationSidebar = ({
     let conversationId = activeConversationId;
 
     if (!conversationId) {
-         conversationId = await handleCreateConversation();
+      conversationId = await handleCreateConversation();
       if (!conversationId) {
         return;
-       }
       }
+    }
 
-      try {
-        await ky.post("/api/messages", {
+    try {
+      await ky.post("/api/messages", {
         json: {
           conversationId,
           message: message.text,
         },
       });
-      } catch {
-        toast.error("Message failed to send");
-      }
+    } catch {
+      toast.error("Message failed to send");
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-full bg-sidebar">
