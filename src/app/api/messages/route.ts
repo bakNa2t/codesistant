@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
+import { inngest } from "@/inngest/client";
 import { NextResponse } from "next/server";
 
 import { api } from "../../../../convex/_generated/api";
@@ -62,11 +63,20 @@ export async function POST(request: Request) {
     status: "processing",
   });
 
+  const event = await inngest.send({
+    name: "message/sent",
+    data: {
+      messageId: assistantMessageId,
+      // conversationId,
+      // projectId,
+      // message,
+    },
+  });
   // Invoke Inngest background jobs
 
   return NextResponse.json({
     success: true,
-    eventId: 0,
+    eventId: event.ids[0],
     messageId: assistantMessageId,
   });
 }
