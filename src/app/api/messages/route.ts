@@ -96,11 +96,12 @@ export async function POST(request: Request) {
     name: "message/sent",
     data: {
       messageId: assistantMessageId,
-      // conversationId,
-      // projectId,
-      // message,
+      conversationId,
+      projectId,
+      message,
     },
   });
+
   // Invoke Inngest background jobs
 
   return NextResponse.json({
