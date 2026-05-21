@@ -112,3 +112,43 @@ export const updateMessageStatus = mutation({
     });
   },
 });
+
+// Used for Agent conversation context
+export const getRecentMessages = query({
+  args: {
+    internalKey: v.string(),
+    conversationId: v.id("conversations"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("by_conversation", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .order("asc")
+      .collect();
+
+    const limit = args.limit ?? 10;
+    return messages.slice(-limit);
+  },
+});
+
+// Used for Agent to update conversation title
+export const updateConversationTitle = mutation({
+  args: {
+    internalKey: v.string(),
+    conversationId: v.id("conversations"),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    validateInternalKey(args.internalKey);
+
+    await ctx.db.patch(args.conversationId, {
+      title: args.title,
+      updatedAt: Date.now(),
+    });
+  },
+});
