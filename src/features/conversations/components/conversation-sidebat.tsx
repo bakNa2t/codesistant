@@ -35,7 +35,7 @@ import {
 } from "../hooks/use-conversations";
 
 import { Id } from "../../../../convex/_generated/dataModel";
-import { DEFAULT_CONVERSATION_NAME } from "../../../../convex/constants";
+import { DEFAULT_CONVERSATION_TITLE } from "../constants";
 
 interface ConversationSidebarProps {
   projectId: Id<"projects">;
@@ -78,7 +78,7 @@ export const ConversationSidebar = ({
     try {
       const newConversationId = await createConversation({
         projectId,
-        title: DEFAULT_CONVERSATION_NAME,
+        title: DEFAULT_CONVERSATION_TITLE,
       });
 
       setSelectedConversationId(newConversationId);
