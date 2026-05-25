@@ -1,10 +1,14 @@
 import { NonRetriableError } from "inngest";
+import { createAgent, gemini } from "@inngest/agent-kit";
 
 import { inngest } from "@/inngest/client";
 import { convex } from "@/lib/convex-client";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
-import { CODING_AGENT_SYSTEM_PROMPT } from "./constants";
+import {
+  CODING_AGENT_SYSTEM_PROMPT,
+  TITLE_GENERATOR_SYSTEM_PROMPT,
+} from "./constants";
 import { DEFAULT_CONVERSATION_TITLE } from "../constants";
 
 interface MessageEvent {
@@ -95,6 +99,42 @@ export const processMessage = inngest.createFunction(
     // Generate conversation title if it's still the default
     const shouldGenerateTitle =
       conversation.title === DEFAULT_CONVERSATION_TITLE;
+
+    if (shouldGenerateTitle) {
+      const titleAgent = createAgent({
+        name: "title-generator",
+        system: TITLE_GENERATOR_SYSTEM_PROMPT,
+        model: gemini({
+          model: "gemini-2.5-flash",
+        }),
+      });
+
+      const { output } = await titleAgent.run(message, { step });
+
+      const textMessage = output.find(
+        (m) => m.type === "text" && m.role === "assistant",
+      );
+
+      if (textMessage?.type === "text") {
+        const title =
+          typeof textMessage.content === "string"
+            ? textMessage.content.trim()
+            : textMessage.content
+                .map((c) => c.text)
+                .join("")
+                .trim();
+
+        if (title) {
+          await step.run("update-conversation-title", async () => {
+            await convex.mutation(api.system.updateConversationTitle, {
+              internalKey,
+              conversationId,
+              title,
+            });
+          });
+        }
+      }
+    }
 
     await step.run("update-assistant-message", async () => {
       await convex.mutation(api.system.updateMessageContent, {
