@@ -10,6 +10,7 @@ import {
   TITLE_GENERATOR_SYSTEM_PROMPT,
 } from "./constants";
 import { DEFAULT_CONVERSATION_TITLE } from "../constants";
+import { createReadFilesTool } from "./tools/read-files";
 
 interface MessageEvent {
   messageId: Id<"messages">;
@@ -135,6 +136,17 @@ export const processMessage = inngest.createFunction(
         }
       }
     }
+
+    // Create the coding agent with file tools
+    const codingAgent = createAgent({
+      name: "codesistant",
+      description: "An export AI coding assistant",
+      system: systemPrompt,
+      model: gemini({
+        model: "gemini-2.5-flash",
+      }),
+      tools: [createReadFilesTool({ internalKey })],
+    });
 
     await step.run("update-assistant-message", async () => {
       await convex.mutation(api.system.updateMessageContent, {
