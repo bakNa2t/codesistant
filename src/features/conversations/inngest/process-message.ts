@@ -11,6 +11,7 @@ import {
 } from "./constants";
 import { DEFAULT_CONVERSATION_TITLE } from "../constants";
 import { createReadFilesTool } from "./tools/read-files";
+import { createListFilesTool } from "./tools/list-files";
 
 interface MessageEvent {
   messageId: Id<"messages">;
@@ -145,7 +146,10 @@ export const processMessage = inngest.createFunction(
       model: gemini({
         model: "gemini-2.5-flash",
       }),
-      tools: [createReadFilesTool({ internalKey })],
+      tools: [
+        createListFilesTool({ projectId, internalKey }),
+        createReadFilesTool({ internalKey }),
+      ],
     });
 
     await step.run("update-assistant-message", async () => {
