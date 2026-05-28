@@ -1,5 +1,5 @@
 import { NonRetriableError } from "inngest";
-import { createAgent, gemini } from "@inngest/agent-kit";
+import { createAgent, createNetwork, gemini } from "@inngest/agent-kit";
 
 import { inngest } from "@/inngest/client";
 import { convex } from "@/lib/convex-client";
@@ -152,12 +152,56 @@ export const processMessage = inngest.createFunction(
       ],
     });
 
+    // Create network with single agent
+    const network = createNetwork({
+      name: "codesistant-network",
+      agents: [codingAgent],
+      maxIter: 20,
+      router: ({ network }) => {
+        const lastResult = network.state.results.at(-1);
+        const hasTextResponse = lastResult?.output.some(
+          (m) => m.type === "text" && m.role === "assistant",
+        );
+        const hasToolCalls = lastResult?.output.some(
+          (m) => m.type === "tool_call",
+        );
+
+        // Only stop if there's text WITHOUT tool calls (final response)
+        if (hasTextResponse && !hasToolCalls) {
+          return undefined;
+        }
+        return codingAgent;
+      },
+    });
+
+    // Run the agent
+    const result = await network.run(message);
+
+    // Extract the assistant's text response from the last agent result
+    const lastResult = result.state.results.at(-1);
+    const textMessage = lastResult?.output.find(
+      (m) => m.type === "text" && m.role === "assistant",
+    );
+
+    let assistantResponse =
+      "I processed your request. Let me know if you need anything else!";
+
+    if (textMessage?.type === "text") {
+      assistantResponse =
+        typeof textMessage.content === "string"
+          ? textMessage.content
+          : textMessage.content.map((c) => c.text).join("");
+    }
+
+    // Update the assistant message with the response (this also sets status to completed)
     await step.run("update-assistant-message", async () => {
       await convex.mutation(api.system.updateMessageContent, {
         internalKey,
         messageId,
-        content: "AI processed this message TODO",
+        content: assistantResponse,
       });
     });
+
+    return { success: true, messageId, conversationId };
   },
 );
