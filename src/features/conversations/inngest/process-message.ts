@@ -13,6 +13,7 @@ import { DEFAULT_CONVERSATION_TITLE } from "../constants";
 import { createReadFilesTool } from "./tools/read-files";
 import { createListFilesTool } from "./tools/list-files";
 import { createUpdateFileTool } from "./tools/update-file";
+import { createCreateFilesTool } from "./tools/create-files";
 
 interface MessageEvent {
   messageId: Id<"messages">;
@@ -151,6 +152,7 @@ export const processMessage = inngest.createFunction(
         createListFilesTool({ projectId, internalKey }),
         createReadFilesTool({ internalKey }),
         createUpdateFileTool({ internalKey }),
+        createCreateFilesTool({ projectId, internalKey }),
       ],
     });
 
