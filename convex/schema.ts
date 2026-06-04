@@ -1,6 +1,5 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
-import { create } from "domain";
 
 export default defineSchema({
   projects: defineTable({
@@ -23,6 +22,12 @@ export default defineSchema({
       ),
     ),
     exportReportUrl: v.optional(v.string()),
+    settings: v.optional(
+      v.object({
+        installCommand: v.optional(v.string()),
+        devCommand: v.optional(v.string()),
+      }),
+    ),
   }).index("by_owner", ["ownerId"]),
 
   files: defineTable({
