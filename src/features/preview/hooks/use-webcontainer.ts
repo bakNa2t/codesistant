@@ -135,4 +135,48 @@ export const useWebContainer = ({
     settings?.devCommand,
     settings?.installCommand,
   ]);
+
+  // Sync file changes (hot-reload)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !files || status !== "running") return;
+
+    const filesMap = new Map(files.map((f) => [f._id, f]));
+
+    for (const file of files) {
+      if (file.type !== "file" || file.storageId || !file.content) continue;
+
+      const filePath = getFilePath(file, filesMap);
+      container.fs.writeFile(filePath, file.content);
+    }
+  }, [files, status]);
+
+  // Reset when disabled
+  useEffect(() => {
+    if (!enabled) {
+      hasStartedRef.current = false;
+      setStatus("idle");
+      setPreviewUrl(null);
+      setError(null);
+    }
+  }, [enabled]);
+
+  // Restart the entire WebContainer process
+  const restart = useCallback(() => {
+    teardownWebContainer();
+    containerRef.current = null;
+    hasStartedRef.current = false;
+    setStatus("idle");
+    setPreviewUrl(null);
+    setError(null);
+    setRestartKey((k) => k + 1);
+  }, []);
+
+  return {
+    status,
+    previewUrl,
+    error,
+    restart,
+    terminalOutput,
+  };
 };
