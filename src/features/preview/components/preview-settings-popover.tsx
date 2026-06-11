@@ -7,7 +7,14 @@ import { SettingsIcon } from "lucide-react";
 
 import { useUpdateProjectSettings } from "@/features/projects/hooks/use-projects";
 
-import { Popover } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
 
 import { Doc, Id } from "../../../../convex/_generated/dataModel";
 
@@ -60,5 +67,92 @@ export const PreviewSettingsPopover = ({
     setOpen(isOpen);
   };
 
-  return <Popover open={open} onOpenChange={handleOpenChange}></Popover>;
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-full rounded-none"
+          title="Preview settings"
+        >
+          <SettingsIcon className="size-4" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-80" align="end">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+        >
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h4 className="font-medium text-sm">Preview settings</h4>
+              <p className="text-xs text-muted-foreground">
+                Configure how your project runs in the preview.
+              </p>
+            </div>
+
+            <form.Field name="installCommand">
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Install Command</FieldLabel>
+
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="npm install"
+                  />
+
+                  <FieldDescription>
+                    Command to install dependencies
+                  </FieldDescription>
+                </Field>
+              )}
+            </form.Field>
+            <form.Field name="devCommand">
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor={field.name}>Start Command</FieldLabel>
+
+                  <Input
+                    id={field.name}
+                    name={field.name}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder="npm run dev"
+                  />
+
+                  <FieldDescription>
+                    Command to start the development server
+                  </FieldDescription>
+                </Field>
+              )}
+            </form.Field>
+
+            <form.Subscribe
+              selector={(state) => [state.canSubmit, state.isSubmitting]}
+            >
+              {([canSubmit, isSubmitting]) => (
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="w-full"
+                  disabled={!canSubmit || isSubmitting}
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </Button>
+              )}
+            </form.Subscribe>
+          </div>
+        </form>
+      </PopoverContent>
+    </Popover>
+  );
 };
