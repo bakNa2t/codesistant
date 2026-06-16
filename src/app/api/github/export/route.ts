@@ -2,23 +2,14 @@ import { z } from "zod";
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
-import { convex } from "@/lib/convex-client";
 import { inngest } from "@/inngest/client";
 
-import { api } from "../../../../../convex/_generated/api";
-
 const requestSchema = z.object({
-  url: z.url(),
+  projectId: z.string(),
+  repoName: z.string().min(1).max(100),
+  visibility: z.enum(["public", "private"]).default("private"),
+  description: z.string().max(350).optional(),
 });
-
-function parseGitHubUrl(url: string) {
-  const match = url.match(/github\.com\/([^/]+)\/([^/]+)/);
-  if (!match) {
-    throw new Error("Invalid GitHub URL");
-  }
-
-  return { owner: match[1], repo: match[2].replace(/\.git$/, "") };
-}
 
 export async function POST(request: Request) {
   const { userId } = await auth();
@@ -28,11 +19,8 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { url } = requestSchema.parse(body);
-
-  const { owner, repo } = parseGitHubUrl(url);
-  // https://github.com/OwnerAlias/codesistan-dev
-  // { owner: "OwnerName", repo: "codesistant-dev" }
+  const { projectId, repoName, visibility, description } =
+    requestSchema.parse(body);
 
   const client = await clerkClient();
   const tokens = await client.users.getUserOauthAccessToken(userId, "github");
@@ -54,24 +42,21 @@ export async function POST(request: Request) {
     );
   }
 
-  const projectId = await convex.mutation(api.system.createProject, {
-    internalKey,
-    name: repo,
-    ownerId: userId,
-  });
-
-  await inngest.send({
-    name: "github/import.repo",
+  const event = await inngest.send({
+    name: "github/export.repo",
     data: {
-      owner,
-      repo,
       projectId,
+      repoName,
+      visibility,
+      description,
       githubToken,
+      internalKey,
     },
   });
 
   return NextResponse.json({
     success: true,
     projectId,
+    eventId: event.ids[0],
   });
 }
