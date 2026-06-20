@@ -1,5 +1,7 @@
+import ky from "ky";
 import { Octokit } from "octokit";
 import { NonRetriableError } from "inngest";
+import { isBinaryFile } from "isbinaryfile";
 
 import { convex } from "@/lib/convex-client";
 import { inngest } from "@/inngest/client";
@@ -74,5 +76,118 @@ export const importGithubRepo = inngest.createFunction(
         return data;
       }
     });
+
+    // Sort folders by depth so parents are created before children
+    // Input:  [{ path: "src/components" }, { path: "src" }, { path: "src/components/ui" }]
+    // Output: [{ path: "src" }, { path: "src/components" }, { path: "src/components/ui" }]
+    const folders = tree.tree
+      .filter((item) => item.type === "tree" && item.path)
+      .sort((a, b) => {
+        const aDepth = a.path ? a.path.split("/").length : 0;
+        const bDepth = b.path ? b.path.split("/").length : 0;
+
+        return aDepth - bDepth;
+      });
+
+    // Return the folder map from the step so it can be used in subsequent steps
+    // (Inngest serializes step results, so we use a plain object instead of Map)
+    const folderIdMap = await step.run("create-folders", async () => {
+      const map: Record<string, Id<"files">> = {};
+
+      for (const folder of folders) {
+        if (!folder.path) {
+          continue;
+        }
+
+        const pathParts = folder.path.split("/");
+        const name = pathParts.pop()!;
+        const parentPath = pathParts.join("/");
+        const parentId = parentPath ? map[parentPath] : undefined;
+
+        const folderId = await convex.mutation(api.system.createFolder, {
+          internalKey,
+          projectId,
+          name,
+          parentId,
+        });
+
+        map[folder.path] = folderId;
+      }
+
+      return map;
+    });
+
+    // Get all files (blobs) from the tree
+    const allFiles = tree.tree.filter(
+      (item) => item.type === "blob" && item.path && item.sha,
+    );
+
+    await step.run("create-files", async () => {
+      for (const file of allFiles) {
+        if (!file.path || !file.sha) {
+          continue;
+        }
+
+        try {
+          const { data: blob } = await octokit.rest.git.getBlob({
+            owner,
+            repo,
+            file_sha: file.sha,
+          });
+
+          const buffer = Buffer.from(blob.content, "base64");
+          const isBinary = await isBinaryFile(buffer);
+
+          const pathParts = file.path.split("/");
+          const name = pathParts.pop()!;
+          const parentPath = pathParts.join("/");
+          const parentId = parentPath ? folderIdMap[parentPath] : undefined;
+
+          if (isBinary) {
+            const uploadUrl = await convex.mutation(
+              api.system.generateUploadUrl,
+              { internalKey },
+            );
+
+            const { storageId } = await ky
+              .post(uploadUrl, {
+                headers: { "Content-Type": "application/octet-stream" },
+                body: buffer,
+              })
+              .json<{ storageId: Id<"_storage"> }>();
+
+            await convex.mutation(api.system.createBinaryFile, {
+              internalKey,
+              projectId,
+              name,
+              storageId,
+              parentId,
+            });
+          } else {
+            const content = buffer.toString("utf-8");
+
+            await convex.mutation(api.system.createFile, {
+              internalKey,
+              projectId,
+              name,
+              content,
+              parentId,
+            });
+          }
+        } catch {
+          console.error(`Failed to import file: ${file.path}`);
+        }
+      }
+    });
+
+    await step.run("set-completed-status", async () => {
+      await convex.mutation(api.system.updateImportStatus, {
+        internalKey,
+        projectId,
+        status: "completed",
+      });
+    });
+
+    return { success: true, projectId };
   },
 );
