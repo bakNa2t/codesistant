@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { FaGithub } from "react-icons/fa";
 import { Allotment } from "allotment";
 
 import { FileExplorer } from "./file-explorer";
+import { ExportPopover } from "./export-popover";
 import { EditorView } from "@/features/editor/components/editor-view";
 
 import { cn } from "@/lib/utils";
@@ -56,10 +56,7 @@ export const ProjectIdView = ({ projectId }: { projectId: Id<"projects"> }) => {
         />
 
         <div className="flex flex-1 justify-end h-full">
-          <div className="flex items-center gap-1.5 px-3 h-full cursor-pointer text-muted-foreground border-l hover:bg-accent/30">
-            <FaGithub className="size-3.5" />
-            <span className="text-sm">Export</span>
-          </div>
+          <ExportPopover projectId={projectId} />
         </div>
       </nav>
 
