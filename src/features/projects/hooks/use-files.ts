@@ -61,7 +61,34 @@ export const useCreateFile = () => {
 };
 
 export const useCreateFolder = () => {
-  return useMutation(api.files.createFolder);
+  return useMutation(api.files.createFolder).withOptimisticUpdate(
+    (localStore, args) => {
+      const existingFiles = localStore.getQuery(api.files.getFolderContents, {
+        projectId: args.projectId,
+        parentId: args.parentId,
+      });
+
+      if (existingFiles !== undefined) {
+        // eslint-disable-next-line react-hooks/purity -- optimistic update callback runs on mutation, not render
+        const now = Date.now();
+        const newFolder = {
+          _id: crypto.randomUUID() as Id<"files">,
+          _creationTime: now,
+          projectId: args.projectId,
+          parentId: args.parentId,
+          name: args.name,
+          type: "folder" as const,
+          updatedAt: now,
+        };
+
+        localStore.setQuery(
+          api.files.getFolderContents,
+          { projectId: args.projectId, parentId: args.parentId },
+          sortFiles([...existingFiles, newFolder]),
+        );
+      }
+    },
+  );
 };
 
 export const useRenameFile = ({
